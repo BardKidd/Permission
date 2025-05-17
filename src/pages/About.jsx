@@ -9,5 +9,5 @@ const About = () => {
   );
 };
 
-const WrappedAbout = withPageAccess('About')(About);
+const WrappedAbout = withPageAccess('B01')(About);
 export default WrappedAbout;

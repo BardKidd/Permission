@@ -1,5 +1,6 @@
 import { Routes, Route, Link } from 'react-router-dom';
 import About from './pages/About';
+import Main from './pages/Main';
 import Unauthorized from './pages/Unauthorized';
 import { PermissionLink } from './components/PermissionLink';
 
@@ -7,16 +8,16 @@ export default function AppRoutes() {
   return (
     <>
       <nav>
-        <PermissionLink to="/" subject="Home">
-          Home
+        <PermissionLink to="/" subject="A01">
+          Main
         </PermissionLink>
-        <PermissionLink to="/about" subject="About">
+        <PermissionLink to="/about" subject="B01">
           About
         </PermissionLink>
       </nav>
 
       <Routes>
-        <Route path="/" element={<h1>Home Page</h1>} />
+        <Route path="/" element={<Main />} />
         <Route path="/about" element={<About />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>

@@ -3,12 +3,10 @@ import { AbilityContext } from './contexts';
 import defineAbilityFor from './utility/defineAbilityFor';
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes';
+import UserPermissions from './mock/permission';
 
 function App() {
-  const [userPermissions] = useState([
-    { subject: 'Home', level: 'write' },
-    { subject: 'About', level: 'read' },
-  ]);
+  const [userPermissions] = useState(UserPermissions);
   return (
     <BrowserRouter>
       <AbilityContext.Provider value={defineAbilityFor(userPermissions)}>

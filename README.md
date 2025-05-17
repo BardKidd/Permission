@@ -2,6 +2,12 @@
 
 摘要：需要設計一套權限模組，該權限模組僅有三種權限：讀寫、讀取、無權限。
 
+> 本權限模組設計時有幾個想法：
+>
+> 1. 只有可讀和可讀寫判斷，沒有權限的話資料元甚至不會將物件傳過來
+> 2. 方便好用，其他開發者容易理解前人寫的架構
+> 3. 容易擴充，未來有除了可讀可讀寫外的情況很容易去添加
+
 > 透過 CASL 套件來輕鬆建立，該套件的宗旨為讓 User 定義「可以做什麼」，所以當沒有設定時就預設為「不可以做什麼」。
 
 本教學透過 context 來傳遞權限而不使用其他狀態管理工具。
@@ -44,8 +50,19 @@ import AppRoutes from '@/routes';
 function App() {
   // 這裡假設權限透過 API 取得後存放裡了。
   const [userPermissions, setUserPermissions] = useState([
-    { subject: 'Home', level: 'write' },
-    { subject: 'About', level: 'read' },
+    {
+      page: 'Main',
+      subPage: [
+        {
+          action: 'edit',
+          pageNumber: 'A01',
+          subject: 'A01',
+          path: 'main',
+          order: '1',
+        },
+      ],
+    },
+    // other...
   ]);
 
   return (
@@ -95,12 +112,11 @@ import { defineAbility } from '@casl/ability';
 export default function defineAbilityForUser(userPermissions = []) {
   return defineAbility((can) => {
     userPermissions.forEach((permission) => {
-      // 雖然上面說過 CASL 是用 action 和 subject。但本範例我假設後端給你的參數是用 level，所以我這裡也跟著使用 level。
       switch (permission.level) {
         case 'read':
           can('read', permission.subject);
           break;
-        case 'write':
+        case 'edit':
           can('manage', permission.subject);
           break;
       }
