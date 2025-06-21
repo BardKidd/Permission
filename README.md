@@ -7,10 +7,11 @@
 > 1. 只有可讀和可讀寫判斷，沒有權限的話資料元甚至不會將物件傳過來
 > 2. 方便好用，其他開發者容易理解前人寫的架構
 > 3. 容易擴充，未來有除了可讀可讀寫外的情況很容易去添加
+> 4. 支援非同步權限載入，模擬真實 API 情境
 
 > 透過 CASL 套件來輕鬆建立，該套件的宗旨為讓 User 定義「可以做什麼」，所以當沒有設定時就預設為「不可以做什麼」。
 
-本教學透過 context 來傳遞權限而不使用其他狀態管理工具。
+本教學透過 context 來傳遞權限而不使用其他狀態管理工具，並加入非同步載入機制。
 
 ## Step 0: 安裝套件
 
@@ -286,5 +287,109 @@ export function PermissionLink({ to, subject, children }) {
 
 ---
 
-以上就是簡單的權限模組設計了，假如不介意一直用 context 的話其實那段 HOC 的內容也就不用寫了。  
-但是在公司裡面除了自己以外也有可能也其他同事，為了讓他人方便設定該頁面是否有權限判斷，只好麻煩一點將它打包起來了。
+## Step 5: 非同步權限載入
+
+在實際專案中，權限通常需要從 API 載入。以下是如何實作非同步權限載入：
+
+### 5.1 建立權限 API 服務
+
+```js
+// src/api/permissions.js
+export const fetchUserPermissions = async (userId = 'default') => {
+  // 模擬網路延遲
+  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+  
+  // 模擬不同使用者有不同權限
+  if (userId === 'readonly') {
+    return readOnlyPermissions;
+  }
+  
+  if (userId === 'limited') {
+    return limitedPermissions;
+  }
+  
+  // 模擬 API 失敗的情況
+  if (Math.random() < 0.05) {
+    throw new Error('Failed to fetch user permissions');
+  }
+  
+  return defaultPermissions;
+};
+```
+
+### 5.2 修改 App.jsx 支援非同步載入
+
+```js
+// App.jsx
+function App() {
+  const [userPermissions, setUserPermissions] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadPermissions = async () => {
+      try {
+        const permissions = await fetchUserPermissions('default');
+        const flattenedPermissions = flattenPermissions(permissions);
+        setUserPermissions(flattenedPermissions);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPermissions();
+  }, []);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorWithRetry error={error} onRetry={handleRetry} />;
+
+  return (
+    <BrowserRouter>
+      <AbilityContext.Provider value={defineAbilityFor(userPermissions || [])}>
+        <AppRoutes />
+      </AbilityContext.Provider>
+    </BrowserRouter>
+  );
+}
+```
+
+### 5.3 測試不同權限場景
+
+你可以修改 `fetchUserPermissions` 的參數來測試不同權限：
+
+- `'default'` - 完整權限
+- `'readonly'` - 只讀權限  
+- `'limited'` - 部分權限
+- 5% 機率會模擬 API 失敗
+
+---
+
+## 專案特色
+
+✅ **完整的權限控制**：頁面級別和元件級別的權限管理  
+✅ **HOC 模式**：使用高階元件包裝需要權限控制的頁面  
+✅ **Context 狀態管理**：簡潔的權限狀態傳遞  
+✅ **非同步載入**：模擬真實 API 權限載入情境  
+✅ **錯誤處理**：完善的載入失敗和重試機制  
+✅ **使用者體驗**：載入動畫和無權限狀態處理  
+✅ **易於擴展**：支援新增更多權限類型和頁面
+
+## 使用方式
+
+```bash
+# 安裝依賴
+npm install
+
+# 啟動開發伺服器
+npm run dev
+
+# 建置專案
+npm run build
+
+# 程式碼檢查
+npm run lint
+```
+
+以上就是完整的權限模組設計了。這個架構不僅適用於小型專案，也能夠輕鬆擴展到大型企業級應用中。透過 CASL 的強大功能和 React 的組件化設計，我們建立了一個既靈活又易於維護的權限系統。
